@@ -8,7 +8,7 @@
 </head>
 <body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
 
-    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg border-t-4 border-[#0082C3]">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg border-t-4 border-[#3B49B8]">
         <h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Mise à la charte automatique</h1>
         <p class="text-gray-500 text-sm text-center mb-6">Uploadez une ancienne présentation, nous appliquons les couleurs Decathlon.</p>
         
@@ -18,7 +18,7 @@
                 <input type="file" id="fileUpload" accept=".pptx" required class="w-full mt-1 p-2 border rounded-lg">
             </div>
 
-            <button type="submit" class="w-full bg-[#0082C3] text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-200">
+            <button type="submit" class="w-full bg-[#3B49B8] text-white font-bold py-3 rounded-lg hover:bg-blue-800 transition duration-200">
                 Transformer le fichier
             </button>
         </form>
@@ -34,15 +34,17 @@
             
             const file = document.getElementById('fileUpload').files[0];
             const statusDiv = document.getElementById('status');
+            const btn = e.target.querySelector('button');
             
             statusDiv.classList.remove('hidden');
+            statusDiv.innerHTML = "Transformation en cours...";
+            btn.disabled = true;
 
             const formData = new FormData();
             formData.append('fichier', file);
 
             try {
-                // Remplacer par l'URL Render
-                const response = await fetch('/api/appliquer-charte', {, {
+                const response = await fetch('/api/appliquer-charte', {
                     method: 'POST',
                     body: formData
                 });
@@ -50,18 +52,29 @@
                 if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
+                    
                     const a = document.createElement('a');
                     a.href = url;
                     a.download = "Decathlon_Modifie.pptx";
+                    
+                    // --- LA CORRECTION EST ICI ---
+                    // Il est OBLIGATOIRE d'ajouter le lien au document pour que le clic fonctionne
+                    document.body.appendChild(a); 
                     a.click();
+                    
+                    // On nettoie la page une fois le téléchargement lancé
+                    a.remove();
+                    window.URL.revokeObjectURL(url);
+                    
+                    statusDiv.innerHTML = "<span class='text-green-600 font-bold'>Téléchargement réussi !</span>";
                 } else {
-                    alert("Erreur lors de la transformation.");
+                    statusDiv.innerHTML = "<span class='text-red-500'>Erreur lors de la transformation.</span>";
                 }
             } catch (error) {
                 console.error(error);
-                alert("Erreur de connexion au serveur.");
+                statusDiv.innerHTML = "<span class='text-red-500'>Erreur de connexion au serveur.</span>";
             } finally {
-                statusDiv.classList.add('hidden');
+                btn.disabled = false;
             }
         });
     </script>
