@@ -5,6 +5,7 @@ from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
 from pptx.enum.shapes import MSO_SHAPE_TYPE
+from fastapi.responses import HTMLResponse
 import os
 import shutil
 
@@ -70,3 +71,9 @@ async def appliquer_charte(fichier: UploadFile = File(...)):
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
         filename="Decathlon_Inter_Charte.pptx"
     )
+
+@app.get("/")
+async def afficher_page_accueil():
+    # Lit et affiche votre fichier index.html
+    with open("index.html", "r", encoding="utf-8") as f:
+        return HTMLResponse(content=f.read())
