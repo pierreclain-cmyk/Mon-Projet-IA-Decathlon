@@ -5,105 +5,177 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Générateur de Présentation | Decathlon</title>
     
-    <!-- Import officiel de la police Inter -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <!-- Tailwind CSS avec configuration personnalisée des couleurs -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
-                    },
+                    fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        decaBlue: '#3B49B8',       /* Le bleu de fond */
-                        decaBlueDark: '#2A3485',   /* Bleu plus sombre pour le fond de page */
-                        decaGreen: '#6EF0A0',      /* Le vert fluo de la jauge */
+                        decaBlue: '#3B49B8',
+                        decaBlueDark: '#2A3485',
+                        decaGreen: '#6EF0A0',
                     }
                 }
             }
         }
     </script>
+    <style>
+        /* Animation de la jauge SVG */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.3s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+    </style>
 </head>
-<body class="bg-decaBlueDark min-h-screen flex items-center justify-center p-4 text-white selection:bg-decaGreen selection:text-decaBlueDark">
+<body class="bg-decaBlueDark min-h-screen flex items-center justify-center p-4 text-white overflow-hidden">
+
+    <!-- Notification Toast (Flottante) -->
+    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
+        <span id="toastIcon" class="mr-3 text-2xl"></span>
+        <p id="toastMessage" class="font-semibold text-sm"></p>
+    </div>
 
     <!-- Container principal -->
-    <div class="bg-decaBlue w-full max-w-lg rounded-3xl shadow-2xl p-10 relative overflow-hidden">
+    <div class="bg-decaBlue bg-opacity-90 backdrop-blur-lg w-full max-w-md rounded-3xl shadow-2xl p-8 relative overflow-hidden border border-white border-opacity-10">
         
-        <!-- Élément graphique de fond (cercles abstraits) -->
-        <div class="absolute -top-24 -right-24 w-48 h-48 bg-white opacity-5 rounded-full blur-2xl"></div>
-        <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-decaGreen opacity-10 rounded-full blur-2xl"></div>
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-decaGreen opacity-10 rounded-full blur-2xl"></div>
 
         <!-- En-tête -->
         <div class="text-center mb-8 relative z-10">
             <h1 class="text-3xl font-bold tracking-tight mb-2">Prez<span class="text-decaGreen">Maker</span></h1>
-            <p class="text-blue-200 text-sm font-semibold">Transformez vos slides à la charte Decathlon.</p>
+            <p class="text-blue-200 text-sm font-semibold">Mise à la charte automatique.</p>
         </div>
 
         <!-- Formulaire -->
         <form id="uploadForm" class="space-y-6 relative z-10">
             
-            <!-- Zone de Drag & Drop stylisée -->
-            <div class="relative group">
-                <div class="absolute -inset-0.5 bg-gradient-to-r from-decaGreen to-blue-400 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-500"></div>
-                <div class="relative flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-blue-300 border-opacity-50 rounded-xl bg-decaBlueDark bg-opacity-50 hover:bg-opacity-80 transition-all cursor-pointer overflow-hidden">
-                    
-                    <svg class="w-10 h-10 text-decaGreen mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-semibold text-blue-100">Cliquez ou glissez un fichier PPTX</p>
-                    <p class="text-xs text-blue-300 mt-1">Maximum 50MB</p>
-                    
-                    <!-- L'input caché qui couvre toute la zone -->
-                    <input type="file" id="fileUpload" accept=".pptx" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+            <!-- Zone Drag & Drop -->
+            <div id="dropZone" class="relative group flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-blue-300 border-opacity-40 rounded-2xl bg-decaBlueDark bg-opacity-40 transition-all duration-300 overflow-hidden">
+                
+                <!-- État initial -->
+                <div id="dropStateInitial" class="flex flex-col items-center pointer-events-none transition-opacity duration-300">
+                    <svg class="w-12 h-12 text-decaGreen mb-3 opacity-80 group-hover:opacity-100 transition-opacity transform group-hover:-translate-y-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="text-sm font-semibold text-blue-100">Glissez votre présentation ici</p>
+                    <p class="text-xs text-blue-300 mt-1">ou parcourez vos fichiers (.pptx)</p>
                 </div>
+
+                <!-- État fichier sélectionné (Caché par défaut) -->
+                <div id="dropStateSelected" class="hidden flex flex-col items-center w-full px-6 text-center pointer-events-none">
+                    <svg class="w-10 h-10 text-white mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
+                    <p id="fileName" class="text-sm font-bold text-decaGreen truncate w-full"></p>
+                    <p id="fileSize" class="text-xs text-blue-200 mt-1"></p>
+                </div>
+
+                <input type="file" id="fileUpload" accept=".pptx" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             </div>
 
-            <!-- Bouton d'action avec contraste fort -->
-            <button type="submit" id="submitBtn" class="w-full bg-decaGreen text-decaBlueDark font-bold py-4 rounded-xl shadow-[0_0_15px_rgba(110,240,160,0.4)] hover:shadow-[0_0_25px_rgba(110,240,160,0.6)] hover:bg-white transition-all duration-300 transform hover:-translate-y-1 flex justify-center items-center">
-                <span>Appliquer la charte</span>
-                <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <button type="submit" id="submitBtn" class="w-full bg-decaGreen text-decaBlueDark font-bold py-4 rounded-xl shadow-[0_4px_14px_rgba(110,240,160,0.39)] hover:shadow-[0_6px_20px_rgba(110,240,160,0.23)] hover:bg-white transition-all duration-300 flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
+                <span>Transformer le fichier</span>
             </button>
         </form>
 
-        <!-- Message de chargement / Statut -->
-        <div id="status" class="mt-6 text-center text-sm font-semibold hidden relative z-10">
-            <div class="flex items-center justify-center space-x-2 text-decaGreen">
-                <svg class="animate-spin h-5 w-5 text-decaGreen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        <!-- Jauge de progression circulaire (Cachée par défaut) -->
+        <div id="progressContainer" class="hidden flex-col items-center justify-center mt-4">
+            <div class="relative w-28 h-28">
+                <svg class="w-full h-full" viewBox="0 0 100 100">
+                    <circle class="text-decaBlueDark stroke-current" stroke-width="8" cx="50" cy="50" r="40" fill="transparent"></circle>
+                    <circle id="progressCircle" class="text-decaGreen progress-ring__circle stroke-current" stroke-width="8" stroke-linecap="round" cx="50" cy="50" r="40" fill="transparent" stroke-dasharray="251.2" stroke-dashoffset="251.2"></circle>
                 </svg>
-                <span>Traitement magique en cours...</span>
+                <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                    <span id="progressText" class="text-xl font-bold text-white">0%</span>
+                </div>
             </div>
+            <p class="text-sm font-semibold text-blue-200 mt-4">Application de la charte...</p>
         </div>
+
     </div>
 
-    <!-- Script JavaScript inchangé -->
     <script>
         const fileInput = document.getElementById('fileUpload');
-        const dropZoneText = document.querySelector('.group p.text-sm');
+        const dropZone = document.getElementById('dropZone');
+        const dropStateInitial = document.getElementById('dropStateInitial');
+        const dropStateSelected = document.getElementById('dropStateSelected');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        
+        // Éléments jauge
+        const progressContainer = document.getElementById('progressContainer');
+        const uploadForm = document.getElementById('uploadForm');
+        const progressCircle = document.getElementById('progressCircle');
+        const progressText = document.getElementById('progressText');
+        const circumference = 40 * 2 * Math.PI; // 251.2
 
-        // Mettre à jour le texte quand un fichier est sélectionné
+        // Éléments Toast
+        const toast = document.getElementById('toast');
+        const toastIcon = document.getElementById('toastIcon');
+        const toastMessage = document.getElementById('toastMessage');
+
+        function showToast(message, type) {
+            toast.className = `fixed bottom-5 right-5 transform transition-all duration-300 z-50 flex items-center px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md ${type === 'success' ? 'bg-decaGreen text-decaBlueDark' : 'bg-red-500 text-white'}`;
+            toastIcon.innerHTML = type === 'success' ? '✨' : '⚠️';
+            toastMessage.textContent = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 4000);
+        }
+
+        function setProgress(percent) {
+            const offset = circumference - (percent / 100) * circumference;
+            progressCircle.style.strokeDashoffset = offset;
+            progressText.textContent = `${Math.round(percent)}%`;
+        }
+
+        // --- GESTION DU DRAG & DROP ---
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('border-decaGreen', 'bg-opacity-70'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('border-decaGreen', 'bg-opacity-70'), false);
+        });
+
         fileInput.addEventListener('change', (e) => {
             if(e.target.files.length > 0) {
-                dropZoneText.textContent = e.target.files[0].name;
-                dropZoneText.classList.add('text-decaGreen');
+                const file = e.target.files[0];
+                dropStateInitial.classList.add('hidden');
+                dropStateSelected.classList.remove('hidden');
+                fileName.textContent = file.name;
+                fileSize.textContent = (file.size / (1024 * 1024)).toFixed(2) + ' Mo';
+                dropZone.classList.add('border-blue-400');
             }
         });
 
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        // --- SOUMISSION DU FORMULAIRE ---
+        uploadForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
             const file = fileInput.files[0];
-            const statusDiv = document.getElementById('status');
-            const btn = document.getElementById('submitBtn');
-            const originalBtnText = btn.innerHTML;
             
-            statusDiv.classList.remove('hidden');
-            btn.disabled = true;
-            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            // Masquer formulaire, afficher jauge
+            uploadForm.classList.add('hidden');
+            progressContainer.classList.remove('hidden');
+            progressContainer.classList.add('flex');
+            setProgress(0);
+
+            // Simulation d'avancement pour faire patienter l'utilisateur
+            let simulatedProgress = 0;
+            const interval = setInterval(() => {
+                if(simulatedProgress < 90) {
+                    simulatedProgress += Math.random() * 5;
+                    setProgress(simulatedProgress);
+                }
+            }, 300);
 
             const formData = new FormData();
             formData.append('fichier', file);
@@ -114,38 +186,42 @@
                     body: formData
                 });
 
+                clearInterval(interval); // Arrêter la simulation
+
                 if (response.ok) {
+                    setProgress(100);
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = "Decathlon_V2.pptx";
+                    a.download = `Decathlon_${file.name}`;
                     document.body.appendChild(a); 
                     a.click();
                     
                     a.remove();
                     window.URL.revokeObjectURL(url);
                     
-                    statusDiv.innerHTML = "<span class='text-decaGreen'>✨ Téléchargement réussi !</span>";
+                    showToast("Mise à la charte terminée avec succès !", "success");
                 } else {
-                    statusDiv.innerHTML = "<span class='text-red-400'>Erreur lors de la transformation.</span>";
+                    showToast("Erreur lors de la transformation.", "error");
                 }
             } catch (error) {
-                console.error(error);
-                statusDiv.innerHTML = "<span class='text-red-400'>Erreur de connexion au serveur.</span>";
+                clearInterval(interval);
+                showToast("Erreur de connexion au serveur.", "error");
             } finally {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                // Reset de l'interface après 2 secondes
                 setTimeout(() => {
-                    statusDiv.classList.add('hidden');
-                    // Reset html
-                    statusDiv.innerHTML = `
-                        <div class="flex items-center justify-center space-x-2 text-decaGreen">
-                            <svg class="animate-spin h-5 w-5 text-decaGreen" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            <span>Traitement magique en cours...</span>
-                        </div>`;
-                }, 5000);
+                    progressContainer.classList.add('hidden');
+                    progressContainer.classList.remove('flex');
+                    uploadForm.classList.remove('hidden');
+                    
+                    // Reset DropZone
+                    fileInput.value = '';
+                    dropStateSelected.classList.add('hidden');
+                    dropStateInitial.classList.remove('hidden');
+                    dropZone.classList.remove('border-blue-400');
+                }, 2000);
             }
         });
     </script>
