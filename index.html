@@ -42,7 +42,7 @@
 
             try {
                 // Remplacer par l'URL Render
-                const response = await fetch('http://localhost:8000/api/appliquer-charte', {
+                const response = await fetch('/api/appliquer-charte', {, {
                     method: 'POST',
                     body: formData
                 });
