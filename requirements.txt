@@ -3,3 +3,4 @@ uvicorn
 python-pptx
 python-multipart
 google-genai
+pyyaml
