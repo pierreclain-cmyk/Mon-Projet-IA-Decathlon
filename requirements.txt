@@ -2,4 +2,4 @@ fastapi
 uvicorn
 python-pptx
 python-multipart
-Pillow
+google-genai
