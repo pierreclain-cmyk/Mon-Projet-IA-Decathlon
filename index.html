@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formateur de Présentation Decathlon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 flex items-center justify-center min-h-screen font-sans">
+
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-lg border-t-4 border-[#0082C3]">
+        <h1 class="text-2xl font-bold text-gray-800 mb-2 text-center">Mise à la charte automatique</h1>
+        <p class="text-gray-500 text-sm text-center mb-6">Uploadez une ancienne présentation, nous appliquons les couleurs Decathlon.</p>
+        
+        <form id="uploadForm" class="space-y-6">
+            <div>
+                <label class="block text-sm font-semibold text-gray-700">Fichier PowerPoint (.pptx)</label>
+                <input type="file" id="fileUpload" accept=".pptx" required class="w-full mt-1 p-2 border rounded-lg">
+            </div>
+
+            <button type="submit" class="w-full bg-[#0082C3] text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition duration-200">
+                Transformer le fichier
+            </button>
+        </form>
+
+        <div id="status" class="mt-4 text-center text-sm font-medium text-gray-600 hidden">
+            Transformation en cours...
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const file = document.getElementById('fileUpload').files[0];
+            const statusDiv = document.getElementById('status');
+            
+            statusDiv.classList.remove('hidden');
+
+            const formData = new FormData();
+            formData.append('fichier', file);
+
+            try {
+                // Remplacer par l'URL Render
+                const response = await fetch('http://localhost:8000/api/appliquer-charte', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "Decathlon_Modifie.pptx";
+                    a.click();
+                } else {
+                    alert("Erreur lors de la transformation.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Erreur de connexion au serveur.");
+            } finally {
+                statusDiv.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
