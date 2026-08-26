@@ -3,14 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Générateur de Présentation | Decathlon</title>
-    
-    <!-- Import officiel de la police Inter -->
+    <title>PrezMaker | Decathlon</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    
-    <!-- Configuration Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -18,176 +14,141 @@
                 extend: {
                     fontFamily: { sans: ['Inter', 'sans-serif'] },
                     colors: {
-                        decaBlue: '#3B49B8',       /* Bleu profond */
-                        decaBlueDark: '#2A3485',   /* Bleu très sombre */
-                        decaGreen: '#6EF0A0',      /* Vert fluo dynamique */
+                        decaBlue: '#3B49B8',
+                        decaBlueDark: '#2A3485',
+                        decaGreen: '#6EF0A0',
                     }
                 }
             }
         }
     </script>
 </head>
-<body class="bg-decaBlueDark min-h-screen flex items-center justify-center p-4 text-white overflow-x-hidden selection:bg-decaGreen selection:text-decaBlueDark">
+<body class="bg-decaBlueDark min-h-screen flex items-center justify-center p-4 text-white overflow-hidden">
 
-    <!-- Notification Toast (Flottante en bas à droite) -->
     <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md">
         <span id="toastIcon" class="mr-3 text-2xl"></span>
         <p id="toastMessage" class="font-semibold text-sm"></p>
     </div>
 
-    <!-- Container principal (Effet Glassmorphism) -->
     <div class="bg-decaBlue bg-opacity-90 backdrop-blur-lg w-full max-w-md rounded-3xl shadow-2xl p-8 relative border border-white border-opacity-10">
         
-        <!-- Décorations lumineuses en arrière-plan -->
-        <div class="absolute -top-20 -right-20 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-decaGreen opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -top-20 -right-20 w-40 h-40 bg-white opacity-5 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-20 -left-20 w-40 h-40 bg-decaGreen opacity-10 rounded-full blur-2xl"></div>
 
-        <!-- En-tête -->
         <div class="text-center mb-6 relative z-10">
             <h1 class="text-3xl font-bold tracking-tight mb-1">Prez<span class="text-decaGreen">Maker</span></h1>
-            <p class="text-blue-200 text-sm font-semibold">Mise à la charte & Image IA</p>
+            <p class="text-blue-200 text-sm font-semibold">Générateur expert alimenté par Gemini.</p>
         </div>
 
         <form id="uploadForm" class="space-y-5 relative z-10">
             
-            <!-- Zone Drag & Drop -->
-            <div id="dropZone" class="relative group flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-blue-300 border-opacity-40 rounded-2xl bg-decaBlueDark bg-opacity-40 transition-all duration-300 overflow-hidden cursor-pointer hover:border-decaGreen hover:bg-opacity-60">
-                
-                <!-- État initial (sans fichier) -->
+            <!-- PPTX Drag & Drop -->
+            <div id="dropZone" class="relative flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-blue-300 border-opacity-40 rounded-2xl bg-decaBlueDark bg-opacity-40 hover:border-decaGreen transition-all cursor-pointer overflow-hidden">
                 <div id="dropStateInitial" class="flex flex-col items-center pointer-events-none">
-                    <svg class="w-10 h-10 text-decaGreen mb-2 opacity-80 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                    <p class="text-sm font-semibold text-blue-100">Glissez votre présentation (.pptx)</p>
+                    <svg class="w-8 h-8 text-decaGreen mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="text-sm font-semibold">Fichier PPTX à formater</p>
                 </div>
-
-                <!-- État avec fichier sélectionné -->
                 <div id="dropStateSelected" class="hidden flex flex-col items-center w-full px-6 text-center pointer-events-none">
-                    <svg class="w-8 h-8 text-white mb-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path></svg>
                     <p id="fileName" class="text-sm font-bold text-decaGreen truncate w-full"></p>
                 </div>
-
-                <!-- Input caché -->
                 <input type="file" id="fileUpload" accept=".pptx" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
             </div>
 
-            <!-- Champs IA Optionnels (Gemini) -->
+            <!-- Gemini IA Section -->
             <div class="border-t border-white border-opacity-10 pt-4 space-y-3">
-                <p class="text-xs font-bold text-decaGreen uppercase tracking-wider">Générer une image avec Gemini (Optionnel)</p>
-                <input type="password" id="apiKey" placeholder="AQ.Ab8RN6ItnbXYAU-cUye_wpG5bqTSiSM4JbrY6z-LIWQ8qlD9pQ" class="w-full p-3 rounded-xl bg-decaBlueDark border border-blue-400 border-opacity-30 text-white text-sm focus:outline-none focus:border-decaGreen transition placeholder-blue-300">
-                <textarea id="imagePrompt" rows="2" placeholder="Ex: Une tente Quechua plantée au sommet d'une montagne enneigée au lever du soleil..." class="w-full p-3 rounded-xl bg-decaBlueDark border border-blue-400 border-opacity-30 text-white text-sm focus:outline-none focus:border-decaGreen transition placeholder-blue-300 resize-none"></textarea>
+                <p class="text-xs font-bold text-decaGreen uppercase tracking-wider flex items-center">
+                    Générer une image avec vos données
+                </p>
+                
+                <textarea id="imagePrompt" rows="2" placeholder="Ex: Un graphique montrant la progression des ventes..." class="w-full p-3 rounded-xl bg-decaBlueDark border border-blue-400 border-opacity-30 text-white text-sm focus:outline-none focus:border-decaGreen transition placeholder-blue-300 resize-none"></textarea>
+                
+                <!-- Input de Données (CSV/TXT) -->
+                <div class="relative overflow-hidden w-full">
+                    <input type="file" id="dataFile" accept=".csv,.txt,.json" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10">
+                    <div class="flex items-center justify-between w-full p-3 rounded-xl bg-decaBlueDark border border-blue-400 border-opacity-30 text-sm">
+                        <span id="dataFileName" class="text-blue-300">Joindre un contexte (CSV, TXT)...</span>
+                        <svg class="w-5 h-5 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    </div>
+                </div>
             </div>
 
-            <!-- Bouton d'action -->
-            <button type="submit" id="submitBtn" class="w-full bg-decaGreen text-decaBlueDark font-bold py-4 rounded-xl shadow-[0_4px_14px_rgba(110,240,160,0.39)] hover:shadow-[0_6px_20px_rgba(110,240,160,0.6)] hover:bg-white transition-all duration-300 flex justify-center items-center transform hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none">
-                <span id="btnText">Transformer la présentation</span>
-                
-                <!-- Icône de chargement cachée par défaut -->
-                <svg id="btnLoader" class="animate-spin h-5 w-5 ml-3 hidden text-decaBlueDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+            <button type="submit" id="submitBtn" class="w-full bg-decaGreen text-decaBlueDark font-bold py-4 rounded-xl shadow-[0_4px_14px_rgba(110,240,160,0.39)] hover:bg-white transition-all flex justify-center items-center">
+                <span id="btnText">Traiter la présentation</span>
+                <svg id="btnLoader" class="animate-spin h-5 w-5 ml-3 hidden text-decaBlueDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
             </button>
         </form>
-
     </div>
 
-    <!-- Script de gestion de l'interface et de l'envoi -->
     <script>
-        // --- Éléments du DOM ---
         const fileInput = document.getElementById('fileUpload');
-        const dropZone = document.getElementById('dropZone');
-        const dropStateInitial = document.getElementById('dropStateInitial');
-        const dropStateSelected = document.getElementById('dropStateSelected');
-        const fileName = document.getElementById('fileName');
+        const dataFileInput = document.getElementById('dataFile');
         
-        // --- Gestion du Drag & Drop ---
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => { e.preventDefault(); e.stopPropagation(); }, false);
-        });
-
         fileInput.addEventListener('change', (e) => {
             if(e.target.files.length > 0) {
-                dropStateInitial.classList.add('hidden');
-                dropStateSelected.classList.remove('hidden');
-                fileName.textContent = e.target.files[0].name;
-                dropZone.classList.add('border-decaGreen', 'bg-opacity-60');
+                document.getElementById('dropStateInitial').classList.add('hidden');
+                document.getElementById('dropStateSelected').classList.remove('hidden');
+                document.getElementById('fileName').textContent = e.target.files[0].name;
             }
         });
 
-        // --- Fonction Toast (Notifications) ---
+        dataFileInput.addEventListener('change', (e) => {
+            if(e.target.files.length > 0) {
+                document.getElementById('dataFileName').textContent = e.target.files[0].name;
+                document.getElementById('dataFileName').classList.add('text-decaGreen', 'font-semibold');
+            }
+        });
+
         function showToast(message, type) {
             const toast = document.getElementById('toast');
             toast.className = `fixed bottom-5 right-5 transform transition-all duration-300 z-50 flex items-center px-6 py-4 rounded-xl shadow-2xl backdrop-blur-md ${type === 'success' ? 'bg-decaGreen text-decaBlueDark' : 'bg-red-500 text-white'}`;
             document.getElementById('toastIcon').innerHTML = type === 'success' ? '✨' : '⚠️';
             document.getElementById('toastMessage').textContent = message;
-            
-            // Afficher
             toast.classList.remove('translate-y-20', 'opacity-0');
-            
-            // Cacher après 4 secondes
             setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 4000);
         }
 
-        // --- Soumission du Formulaire ---
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const btnText = document.getElementById('btnText');
-            const btnLoader = document.getElementById('btnLoader');
             const submitBtn = document.getElementById('submitBtn');
-            
-            // État de chargement
             submitBtn.disabled = true;
-            btnText.textContent = "Magie en cours...";
-            btnLoader.classList.remove('hidden');
+            document.getElementById('btnText').textContent = "Analyse en cours...";
+            document.getElementById('btnLoader').classList.remove('hidden');
 
-            // Préparation des données
             const formData = new FormData();
             formData.append('fichier', fileInput.files[0]);
             
-            const apiKey = document.getElementById('apiKey').value;
             const prompt = document.getElementById('imagePrompt').value;
-            if (apiKey) formData.append('api_key', apiKey);
             if (prompt) formData.append('image_prompt', prompt);
+            
+            // Ajout du fichier de données (s'il existe)
+            if (dataFileInput.files.length > 0) {
+                formData.append('donnees', dataFileInput.files[0]);
+            }
 
             try {
-                // Requête vers votre backend Python
-                const response = await fetch('/api/appliquer-charte', { 
-                    method: 'POST', 
-                    body: formData 
-                });
+                const response = await fetch('/api/appliquer-charte', { method: 'POST', body: formData });
 
                 if (response.ok) {
-                    // Création du lien de téléchargement
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.href = url;
-                    a.download = `Decathlon_Charte_${fileInput.files[0].name}`;
-                    
+                    a.download = `PrezMaker_${fileInput.files[0].name}`;
                     document.body.appendChild(a); 
                     a.click();
-                    
-                    // Nettoyage
                     a.remove();
                     window.URL.revokeObjectURL(url);
-                    
-                    showToast("Transformation réussie ! Le fichier a été téléchargé.", "success");
+                    showToast("Transformation réussie !", "success");
                 } else {
-                    showToast("Une erreur est survenue lors du traitement.", "error");
+                    showToast("Erreur lors de la transformation.", "error");
                 }
             } catch (error) {
-                showToast("Impossible de se connecter au serveur.", "error");
+                showToast("Erreur de connexion.", "error");
             } finally {
-                // Remise à l'état initial du bouton
                 submitBtn.disabled = false;
-                btnText.textContent = "Transformer la présentation";
-                btnLoader.classList.add('hidden');
-                
-                // Optionnel : on peut vider le champ fichier après le succès
-                // fileInput.value = '';
-                // dropStateSelected.classList.add('hidden');
-                // dropStateInitial.classList.remove('hidden');
-                // dropZone.classList.remove('border-decaGreen', 'bg-opacity-60');
+                document.getElementById('btnText').textContent = "Traiter la présentation";
+                document.getElementById('btnLoader').classList.add('hidden');
             }
         });
     </script>
