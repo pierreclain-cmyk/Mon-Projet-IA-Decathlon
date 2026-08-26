@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pptx import Presentation
 from pptx.util import Pt
 from pptx.dml.color import RGBColor
+from pptx.enum.shapes import MSO_SHAPE_TYPE
 import os
 import shutil
 
@@ -18,41 +19,54 @@ app.add_middleware(
 
 @app.post("/api/appliquer-charte")
 async def appliquer_charte(fichier: UploadFile = File(...)):
-    # 1. Sauvegarder le fichier envoyé par l'utilisateur
+    # 1. Sauvegarder temporairement le fichier
     input_path = f"temp_{fichier.filename}"
     with open(input_path, "wb") as buffer:
         shutil.copyfileobj(fichier.file, buffer)
 
-    # 2. Ouvrir la présentation avec python-pptx
+    # 2. Ouvrir la présentation
     prs = Presentation(input_path)
 
-    # 3. Appliquer la charte graphique Decathlon à tout le texte existant
-    # Bleu Decathlon : RGB(0, 130, 195)
-    decathlon_blue = RGBColor(0, 130, 195)
+    # Couleurs de la charte d'après la capture d'écran
+    bleu_fond = RGBColor(59, 73, 184) # Le fond bleu indigo
+    texte_blanc = RGBColor(255, 255, 255) # Texte blanc
     
+    # 3. Appliquer la charte à chaque diapositive
     for slide in prs.slides:
+        
+        # A. Modifier le fond de la diapositive
+        background = slide.background
+        fill = background.fill
+        fill.solid()
+        fill.fore_color.rgb = bleu_fond
+
+        # B. Parcourir tous les éléments pour modifier les textes
         for shape in slide.shapes:
             if not shape.has_text_frame:
                 continue
                 
             for paragraph in shape.text_frame.paragraphs:
                 for run in paragraph.runs:
-                    # Forcer la police (remplacez par la police officielle si besoin)
-                    run.font.name = 'Arial' 
+                    # Appliquer la police "Inter"
+                    run.font.name = 'Inter'
                     
-                    # Si c'est un titre (généralement gros texte), on le met en bleu
-                    if run.font.size and run.font.size > Pt(20):
-                        run.font.color.rgb = decathlon_blue
+                    # Appliquer la couleur blanche au texte
+                    run.font.color.rgb = texte_blanc
+                    
+                    # Si c'est un titre (taille existante > 24), on le met en gras (Semibold)
+                    if run.font.size and run.font.size > Pt(24):
+                        run.font.bold = True
+                    # Si c'est du texte standard (storytelling), on peut forcer autour de 18pt
+                    elif run.font.size and run.font.size < Pt(20):
+                        run.font.size = Pt(18)
 
-    # 4. Sauvegarder le fichier modifié
-    output_path = "Decathlon_Modifie.pptx"
+    # 4. Sauvegarder la présentation mise à jour
+    output_path = "Decathlon_Inter_Charte.pptx"
     prs.save(output_path)
-
-    # Nettoyer le fichier temporaire
     os.remove(input_path)
 
     return FileResponse(
         output_path, 
         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
-        filename="Decathlon_Modifie.pptx"
+        filename="Decathlon_Inter_Charte.pptx"
     )
