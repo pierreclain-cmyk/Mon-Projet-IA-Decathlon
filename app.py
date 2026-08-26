@@ -7,7 +7,7 @@ from pptx.dml.color import RGBColor
 import os
 import shutil
 import io
-from google import genai # Import de l'API Google Gemini
+from google import genai
 
 app = FastAPI()
 
@@ -21,8 +21,8 @@ app.add_middleware(
 @app.post("/api/appliquer-charte")
 async def appliquer_charte(
     fichier: UploadFile = File(...),
-    api_key: str = Form(""),
-    image_prompt: str = Form("")
+    image_prompt: str = Form(""),
+    donnees: UploadFile = File(None)  # Le nouveau fichier de données optionnel
 ):
     input_path = f"temp_{fichier.filename}"
     
@@ -34,7 +34,7 @@ async def appliquer_charte(
         bleu_fond = RGBColor(59, 73, 184)
         texte_blanc = RGBColor(255, 255, 255)
 
-        # 1. APPLICATION DE LA CHARTE (Textes et fond uniquement)
+        # 1. APPLICATION EXPERTE DE LA CHARTE TYPOGRAPHIQUE
         for slide in prs.slides:
             background = slide.background
             fill = background.fill
@@ -44,74 +44,94 @@ async def appliquer_charte(
             for shape in slide.shapes:
                 if shape.has_text_frame:
                     is_title = shape == slide.shapes.title
+                    
                     for paragraph in shape.text_frame.paragraphs:
                         for run in paragraph.runs:
+                            # Forcer la police globale
                             run.font.name = 'Inter'
                             run.font.color.rgb = texte_blanc
                             
+                            texte_brut = run.text.strip()
+                            taille_orig = run.font.size
+                            
+                            # --- NOUVELLE LOGIQUE TYPOGRAPHIQUE ---
                             if is_title:
                                 run.font.size = Pt(32)
                                 run.font.bold = True
+                                
+                            # Si c'est un mot en majuscule (ex: "WATERPROOFING")
+                            elif texte_brut.isupper() and len(texte_brut) > 3:
+                                run.font.size = Pt(14)
+                                run.font.bold = False
+                                
+                            # Si c'est un gros chiffre/métrique d'origine (ex: "30,000mm")
+                            elif taille_orig and taille_orig > Pt(24):
+                                run.font.size = Pt(36)
+                                run.font.bold = True
+                                
+                            # Si c'est une petite note (ex: "Minimum", "Externe")
+                            elif taille_orig and taille_orig < Pt(14):
+                                run.font.size = Pt(12)
+                                run.font.bold = False
+                                
+                            # Sinon, c'est le Storytelling par défaut (ex: votre capture)
                             else:
-                                if run.font.size and run.font.size > Pt(20):
-                                    run.font.size = Pt(24)
-                                    run.font.bold = True
-                                else:
-                                    run.font.size = Pt(18)
-                                    run.font.bold = False
+                                run.font.size = Pt(18)
+                                run.font.bold = True # Semibold dans PPT est géré par le bold standard
 
-        # 2. GÉNÉRATION D'IMAGE IA AVEC GEMINI (Imagen 3)
+        # 2. GÉNÉRATION IA AVEC DONNÉES EXTERNES
+        # Récupération sécurisée de la clé API depuis le serveur
+        api_key = os.getenv("GEMINI_API_KEY")
+        
         if api_key and image_prompt:
             try:
-                # Connexion à l'API Google
+                # Lecture des données externes si fournies
+                contexte_data = ""
+                if donnees:
+                    contenu = await donnees.read()
+                    # On décode le fichier (CSV, TXT, JSON) en texte lisible par l'IA
+                    contexte_data = f"\n\nPrends impérativement en compte ces données pour générer l'image : {contenu.decode('utf-8')[:1000]}"
+
                 client = genai.Client(api_key=api_key)
                 
-                # On force le style pour correspondre à votre charte
-                prompt_optimise = f"Style minimaliste, vecteur, couleurs bleu profond et vert fluo, sport. Sujet : {image_prompt}"
+                # Le prompt fusionne vos consignes visuelles, la demande utilisateur, et la donnée
+                prompt_optimise = f"Style vectoriel plat, minimaliste. Couleurs strictes : fond bleu indigo, accents vert menthe vif. Sujet : {image_prompt} {contexte_data}"
                 
-                # Appel du modèle Imagen 3
                 result = client.models.generate_images(
                     model='imagen-3.0-generate-001',
                     prompt=prompt_optimise,
-                    config=dict(
-                        number_of_images=1,
-                        aspect_ratio="1:1",
-                        output_mime_type="image/jpeg"
-                    )
+                    config=dict(number_of_images=1, aspect_ratio="16:9", output_mime_type="image/jpeg")
                 )
                 
-                # Récupération des données binaires de l'image
                 image_bytes = result.generated_images[0].image.image_bytes
                 img_stream = io.BytesIO(image_bytes)
                 
-                # Création d'une nouvelle diapositive vide à la fin
-                blank_slide_layout = prs.slide_layouts[6] # Index 6 = diapo vide
+                # Ajout de l'image sur une nouvelle diapositive
+                blank_slide_layout = prs.slide_layouts[6]
                 new_slide = prs.slides.add_slide(blank_slide_layout)
                 
-                # Fond bleu pour la nouvelle diapositive
                 new_slide_bg = new_slide.background
                 new_slide_bg.fill.solid()
                 new_slide_bg.fill.fore_color.rgb = bleu_fond
                 
-                # Ajout et centrage de l'image IA générée
-                new_slide.shapes.add_picture(img_stream, Inches(2), Inches(1), height=Inches(5.5))
+                # Image en plein écran (ou presque)
+                new_slide.shapes.add_picture(img_stream, Inches(1), Inches(1), width=Inches(8))
                 
             except Exception as e:
-                print(f"L'image IA (Gemini) n'a pas pu être générée : {e}")
-                # Le script ne plante pas si l'API échoue, il renvoie quand même la présentation formatée
+                print(f"Erreur IA : {e}")
 
-        output_path = "Decathlon_IA_Gemini.pptx"
+        output_path = "Decathlon_Expert.pptx"
         prs.save(output_path)
         
         return FileResponse(
             output_path, 
             media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation", 
-            filename="Decathlon_IA_Gemini.pptx"
+            filename="Decathlon_Expert.pptx"
         )
         
     except Exception as e:
-        print(f"Erreur globale : {e}")
-        raise HTTPException(status_code=500, detail="Erreur du serveur lors du formatage.")
+        print(f"Erreur : {e}")
+        raise HTTPException(status_code=500, detail="Erreur serveur.")
         
     finally:
         if os.path.exists(input_path):
