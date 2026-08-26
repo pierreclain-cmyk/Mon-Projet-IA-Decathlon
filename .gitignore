@@ -1,0 +1,5 @@
+*.gguf
+__pycache__/
+*.pptx
+!template_decathlon.pptx
+presentation_generee.pptx
